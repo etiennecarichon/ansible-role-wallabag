@@ -1,0 +1,35 @@
+---
+- name: Fail if required wallabag settings not defined
+  ansible.builtin.fail:
+    msg: >
+      You need to define a required configuration setting (`{{ item.name }}`).
+  when: "item.when | bool and vars[item.name] | length == 0"
+  with_items:
+    - {'name': 'wallabag_identifier', when: true}
+    - {'name': 'wallabag_uid', when: true}
+    - {'name': 'wallabag_gid', when: true}
+    - {'name': 'wallabag_hostname', when: true}
+    - {'name': 'wallabag_path_prefix', when: true}
+    - {'name': 'wallabag_container_network', when: true}
+    - {'name': 'wallabag_database_hostname', when: true}
+    - {'name': 'wallabag_database_password', when: true}
+
+- when: wallabag_container_labels_traefik_enabled | bool
+  block:
+    - name: Fail if required Wallabag Traefik settings not defined
+      ansible.builtin.fail:
+        msg: >-
+          You need to define a required configuration setting (`{{ item }}`).
+      when: "vars[item] == ''"
+      with_items:
+        - wallabag_container_labels_traefik_hostname
+        - wallabag_container_labels_traefik_path_prefix
+
+    # We ensure it doesn't end with a slash, because we handle both (slash and no-slash).
+    # Knowing that `wallabag_container_labels_traefik_path_prefix` does not end with a slash
+    # ensures we know how to set these routes up without having to do "does it end with a slash" checks elsewhere.
+    - name: Fail if wallabag_container_labels_traefik_path_prefix ends with a slash
+      ansible.builtin.fail:
+        msg: >-
+          wallabag_container_labels_traefik_path_prefix (`{{ wallabag_container_labels_traefik_path_prefix }}`) must either be `/` or not end with a slash (e.g. `/wallabag`).
+      when: "wallabag_container_labels_traefik_path_prefix != '/' and wallabag_container_labels_traefik_path_prefix[-1] == '/'"

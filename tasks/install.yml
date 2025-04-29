@@ -1,0 +1,45 @@
+---
+- name: Ensure Wallabag paths exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0750
+    owner: "{{ wallabag_uid }}"
+    group: "{{ wallabag_gid }}"
+  with_items:
+    - "{{ wallabag_base_path }}"
+    - "{{ wallabag_data_path }}"
+    - "{{ wallabag_extensions_path }}"
+
+- name: Ensure Wallabag support files installed
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/{{ item }}.j2"
+    dest: "{{ wallabag_base_path }}/{{ item }}"
+    mode: 0640
+    owner: "{{ wallabag_uid }}"
+    group: "{{ wallabag_gid }}"
+  with_items:
+    - env
+    - labels
+
+- name: Ensure Wallabag container image is pulled
+  community.docker.docker_image:
+    name: "{{ wallabag_container_image }}"
+    source: "{{ 'pull' if ansible_version.major > 2 or ansible_version.minor > 7 else omit }}"
+    force_source: "{{ wallabag_container_image_force_pull if ansible_version.major > 2 or ansible_version.minor >= 8 else omit }}"
+    force: "{{ omit if ansible_version.major > 2 or ansible_version.minor >= 8 else wallabag_container_image_force_pull }}"
+  register: result
+  retries: "{{ devture_playbook_help_container_retries_count }}"
+  delay: "{{ devture_playbook_help_container_retries_delay }}"
+  until: result is not failed
+
+- name: Ensure Wallabag container network is created
+  community.general.docker_network:
+    name: "{{ wallabag_container_network }}"
+    driver: bridge
+
+- name: Ensure Wallabag systemd service is present
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/systemd/wallabag.service.j2"
+    dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ wallabag_identifier }}.service"
+    mode: 0644
