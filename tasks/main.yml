@@ -11,11 +11,11 @@
     - install-all
     - install-wallabag
 
-- tags:
-  - populate-wallabag-database
-  block:
-    - when: wallabag_enabled | bool
-      ansible.builtin.include_tasks: "{{ role_path }}/tasks/populate-wallabag-database.yml"
+- block:
+  - when: wallabag_enabled | bool
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/populate-wallabag-database.yml"
+  tags:
+    - populate-wallabag-database
 
 - block:
     - when: not wallabag_enabled | bool
