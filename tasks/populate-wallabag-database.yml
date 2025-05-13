@@ -3,25 +3,21 @@
   command: /mash/postgres/bin/cli-non-interactive -tAc "SELECT 1 FROM pg_database WHERE datname='{{ wallabag_database_name }}';"
   register: wallabag_db_check
   changed_when: false
-
-- name: Handle database existence
+  
+- name: Ensure "public" is a table in database
+  command: /mash/postgres/bin/cli-non-interactive -d  {{ wallabag_database_name }} -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public';"
+  register: populated_table_check
+  changed_when: false
+  
+- name: Fail if wallabag database does not exist
+  fail:
+    msg: "{{ wallabag_database_name }} is not a database"
+  when: wallabag_db_check.stdout.strip() != "1"
+      
+- name: Ensure {{ wallabag_database_name}} database is populated
   block:
-    - name: Fail if wallabag database does not exist
-      fail:
-        msg: "{{ wallabag_database_name }} is not a database"
-      when: wallabag_db_check.stdout.strip() != "1"
-
-  rescue:
-    - name: Ensure "public" is a table in database
-      command: /mash/postgres/bin/cli-non-interactive -d wallabag -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public';"
-      register: populated_table_check
-      changed_when: false
-
-    - name: Populate if table doesn't exist
-      block:
-        - name: Populate the table
-          command: "{{ devture_systemd_docker_base_host_command_docker }} exec -t mash-wallabag /var/www/wallabag/bin/console doctrine:migrations:migrate --env=prod --no-interaction"
-
-        - name: Install wallabag
-          command: "{{ devture_systemd_docker_base_host_command_docker }} exec -t mash-wallabag /var/www/wallabag/bin/console wallabag:install --env=prod --no-interaction"
-      when: populated_table_check.stdout == ""
+    - name: Populate the table
+      command: "{{ devture_systemd_docker_base_host_command_docker }} exec -t mash-wallabag /var/www/wallabag/bin/console doctrine:migrations:migrate --env=prod --no-interaction"
+    - name: Install wallabag
+      command: "{{ devture_systemd_docker_base_host_command_docker }} exec -t mash-wallabag /var/www/wallabag/bin/console wallabag:install --env=prod --no-interaction"
+  when: populated_table_check.stdout == ""
