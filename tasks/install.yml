@@ -43,6 +43,3 @@
     src: "{{ role_path }}/templates/systemd/wallabag.service.j2"
     dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ wallabag_identifier }}.service"
     mode: 0644
-
-- name: Ensure Wallabag database is populated
-  include_tasks: populate-wallabag-database.yml
