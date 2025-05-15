@@ -98,8 +98,14 @@ wallabag_container_labels_additional_labels: ""
 # A list of extra arguments to pass to the container
 wallabag_container_extra_arguments: []
 
-# List of systemd services that wallabag.service depends on
-wallabag_systemd_required_services_list: ["docker.service"]
+# List of systemd services that the Wallabag systemd service depends on
+wallabag_systemd_required_services_list: "{{ wallabag_systemd_required_services_list_default + wallabag_systemd_required_services_list_auto + wallabag_systemd_required_services_list_custom }}"
+wallabag_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+wallabag_systemd_required_services_list_auto: []
+wallabag_systemd_required_services_list_custom: []
+
+# List of systemd services that the Wallabag systemd service wants
+wallabag_systemd_wanted_services_list: []
 
 # Specifies the value of the `X-XSS-Protection` header
 # Stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
