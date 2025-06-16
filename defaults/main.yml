@@ -32,7 +32,7 @@ wallabag_hostname: ""
 wallabag_path_prefix: /
 
 # Version of Wallabag to deploy
-wallabag_version: 2.6.12
+wallabag_version: 2.6.13
 
 # Base path for Wallabag resources
 wallabag_base_path: "{{ wallabag_identifier }}"
